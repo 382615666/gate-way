@@ -1,0 +1,1 @@
+nginx -c conf/nginx.dev.conf
