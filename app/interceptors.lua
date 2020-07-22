@@ -1,6 +1,7 @@
 local utils = require('utils.index')
 local constants = require('utils.constants')
 local info = ngx.shared.info
+local cjson = require('cjson')
 local interceptors = {}
 
 
@@ -52,7 +53,7 @@ function getProxyConfig ()
     return result
 end
 
-function interceptors:coreConfig (req, res, next)
+interceptors.coreConfig = function (req, res, next)
     local config = info:get(constants.GATEWAY_CORECONFIG)
     if not config then
         config = {
@@ -66,9 +67,7 @@ function interceptors:coreConfig (req, res, next)
         config.proxy = getProxyConfig()
         info:set(constants.GATEWAY_CORECONFIG, cjson.encode(config))
     end
-    
     next()
 end
-
 
 return interceptors
