@@ -60,6 +60,7 @@ interceptors.coreConfig = function (req, res, next)
             redis_host = os.getenv('REDIS_HOST'),
             redis_port = os.getenv('REDIS_PORT') or 6379,
             dev = os.getenv('NGINX_ENV') == 'development',
+            nginx_env = os.getenv('NGINX_ENV') or 'production',
             app_name = os.getenv('APP_NAME') or 'gateway',
             version = os.getenv('VERSION') or 'test'
         }
@@ -70,4 +71,32 @@ interceptors.coreConfig = function (req, res, next)
     next()
 end
 
+interceptors.reqParams = function (req, res, next)
+    req.traceId = utils:buildUUID()
+    req.rpcId = '0'
+    req.request_time = ngx.req.start_time()
+
+    local config = info:get(constants.GATEWAY_CORECONFIG)
+    config = cjson.decode(config.nginx_env)
+    req.env = config.nginx_env
+    req.dev = config.dev
+    req.app = config.app_name
+    req.version = config.version
+
+    ngx.req.set_header('tranceid', req.traceId)
+    ngx.req.set_header('appname', req.app)
+
+    local cookie = ngx.req.get_headers()['Cookie']
+    -- 清除易观方舟的cookie
+    if cookie then
+        cookie = string.gsub(cookie, 'FZ_STROAGE=[^ ]*', '')
+        ngx.req.set_header('Cookie', cookie)
+    end
+
+    if req.app and req.app ~= 'www' then
+        ngx.req.clear_header('cookie')
+    end
+
+    next()
+end
 return interceptors

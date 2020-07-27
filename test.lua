@@ -1,6 +1,2 @@
-local cjson = require('cjson')
-local t = {
-    a = 1
-}
-
-print(type(cjson.encode(t)))
+local a = 1
+print('$a')

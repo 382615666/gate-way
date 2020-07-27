@@ -5,12 +5,16 @@ local cjson = require('cjson')
 local app = lor()
 
 app:use(interceptors.coreConfig)
+app:use(interceptors.reqParams)
 
 routes(app)
 
 app:erroruse(function(err, req, res, next)
-    ngx.log(ngx.ERR, err)
-    res:status(500):send("服务器内发生未知错误")
+    if not req:is_found() then
+        res:status(ngx.HTTP_NOT_FOUND):send('404')
+        return
+    end
+    res:status(ngx.HTTP_INTERNAL_SERVER_ERROR):send('500')
 end)
 
 app:run()
