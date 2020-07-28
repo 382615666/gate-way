@@ -22,18 +22,22 @@ end
 function utils:getHostname ()
     local hostname = info:get(constants.HOSTNAME)
     if not hostname then
-        local result = io:popen('cat /etc/home')
-        hostname = result:read('*all')
-        info:set(constants.HOSTNAME, hostname)
+        -- local result = io:popen('cat /etc/home')
+        -- hostname = result:read('*all')
+        -- info:set(constants.HOSTNAME, hostname)
     end
 
-    return hostname
+    return hostname or ''
 end
 
 function utils:getInc ()
     local result = info:incr(constants.INC, 1, 0)
     result = result or 0
     return result
+end
+
+function utils:dateFormat (time)
+    return os.date('%Y-%m-%d %H:%M:%S', time)
 end
 
 return utils
