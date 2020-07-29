@@ -37,9 +37,7 @@ function routes (app)
     end)
 
     app:get('/test', function (req, res, next)
-        local a = 'aa'
-        local t = cjson.encode(a)
-        res:json(111)
+        res:json(22)
     end)
 end
 

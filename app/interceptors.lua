@@ -177,7 +177,9 @@ interceptors.staticConfig = function (req, res, next)
         return 
     end
 
+    local key = 'open-gateway:' .. appid
     
+
     
 end
 
