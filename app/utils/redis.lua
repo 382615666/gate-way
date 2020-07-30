@@ -10,7 +10,7 @@ function REDIS:getClient ()
     client:set_timeout(5000)
     local config = info:get(constants.HOST_DEVELOPMENT)
     config = cjson.encode(config)
-    local ip = ip:resolve(config.redis_host)
+    local ip = ip:getIp(config.redis_host)
     client:connect(ip, config.redis_port)
     return client
 end

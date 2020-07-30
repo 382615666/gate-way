@@ -1,5 +1,6 @@
 local utils = require('utils.index')
 local constants = require('utils.constants')
+local redis = require('utils.redis')
 local info = ngx.shared.info
 local cjson = require('cjson')
 local interceptors = {}
@@ -65,7 +66,6 @@ interceptors.coreConfig = function (req, res, next)
             version = os.getenv('VERSION') or 'test'
         }
 
-        config.proxy = getProxyConfig()
         info:set(constants.GATEWAY_CORECONFIG, cjson.encode(config))
     end
     next()
@@ -142,21 +142,45 @@ interceptors.log = function (req, res, next)
     
 end
 
-interceptors.staticConfig = function (req, res, next)
+function getOpenApiList (apis, appid)
+    local config = info:get('all_open_api:' .. appid)
+    if config then
+        return cjson.decode(config)
+    else
+        local res = utils:invoke(apis, nil, appid)
+        if res.status == 200 then
+            local result = cjson.decode(res.body)
+            for index, item in ipairs(result.data) do
+                local path = ngx.re.gsub(item.apiPath, '/', '\\/+', "i")
+                path = ngx.re.gsub(path, '{[^/]+}', '[^/]+', "i")
+                item.apiUrl = '^'..string.lower(path)..'$'
+            end
+            info:set('all_open_api:' .. appid, cjson.encode(result.data), 60)
+            return result.data
+        end
+        return {}
+    end
+
+end
+
+interceptors.openApiConfig = function (req, res, next)
 
     next()
 
-    local staticConfig = info:get(constants.GATEWAY_APISTATISTICSCONFIG)
-    if staticConfig then
-        staticConfig = cjson.decode(staticConfig)
+    local apiConfig = info:get(constants.GATEWAY_APISTATISTICSCONFIG)
+    if apiConfig then
+        apiConfig = cjson.decode(apiConfig)
     else
         local service = os.getenv('API_STATISTICS')
+        if not service then
+            return
+        end
         service = utils:split(service, '=')
     
         local config = info:get(constants.GATEWAY_CORECONFIG)
         config = cjson.decode(config)
     
-        staticConfig =  {
+        apiConfig =  {
             redis_host = config.redis_host,
             redis_port = config.redis_port,
             urls = {
@@ -168,19 +192,41 @@ interceptors.staticConfig = function (req, res, next)
             }
         }
 
-        info:set(constants.GATEWAY_APISTATISTICSCONFIG, cjson.encode(staticConfig))
+        info:set(constants.GATEWAY_APISTATISTICSCONFIG, cjson.encode(apiConfig))
     end
 
     local appid = ngx.req.get_headers()['app-id']
-
     if not appid then
         return 
     end
 
-    local key = 'open-gateway:' .. appid
+    local apis = getOpenApiList(apiConfig.urls.apis, appid)
+    local path = ngx.re.gsub(req.path, '/(\\w+)/v[0-9]+/', '/$1/')
+    local api = nil
+    for index, item in ipairs(apis) do
+        local p = ngx.re.match(path, item.apiUrl)
+        if p and string.upper(item.apiMethod) == req.method then
+            api = item
+            break
+        end
+    end
+    if not api then
+        return
+    end
+    local key = 'open-gateway:' .. appid .. ':' .. obj.apiId .. ':' .. obj.apiNo .. ':' .. (math.floor(ngx.time()/60/60))
+    if ngx.status == ngx.HTTP_OK then
+        key = key .. ':1'
+    else 
+        key = key .. ':0'
+    end
     
-
-    
+    local client = redis:getClient()
+    local result = client:incr(key)
+    client:closeClient(client)
+    if result == 1 then
+        client:expire(key, 86400)
+    end
+    ngx.log(ngx.ALERT,key .. "-----" .. ok)
 end
 
 return interceptors

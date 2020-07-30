@@ -31,13 +31,13 @@ function routes (app)
             res:send('设置host成功')
         end
     end):get('/api/host', function (req, res)
-        local config = info:get(constants.GATEWAY_CORECONFIG)
-        config = cjson.decode(config)
-        res:json(config)
+        -- local config = info:get(constants.GATEWAY_CORECONFIG)
+        -- config = cjson.decode(config)
+        -- res:json(config)
     end)
 
     app:get('/test', function (req, res, next)
-        res:json(22)
+        res:send(ngx.HTTP_GET)
     end)
 end
 

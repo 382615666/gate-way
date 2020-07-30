@@ -1,5 +1,6 @@
 local uuid = require('libs.resty.jit-uuid')
 local constants = require('utils.constants')
+local ip = require('utils.ip')
 local info = ngx.shared.info
 local utils = {}
 
@@ -38,6 +39,37 @@ end
 
 function utils:dateFormat (time)
     return os.date('%Y-%m-%d %H:%M:%S', time)
+end
+
+function utils:getRpcId ()
+    ngx.ctx.rpcid = ngx.ctx.rpcid and ngx.ctx.rpcid + 1 or 1
+    return '0.' .. ngx.ctx.rpcid
+end
+
+function utils:invoke (apis, body, ...) 
+    local config = info:get(constants.GATEWAY_CORECONFIG)
+    config = cjson.decode(config)
+
+    local result = ''
+    if config.dev then
+        result = ip:getDevIp(apis.host)
+    else
+        result = ip:getIp(api.host)
+    end
+
+    if not result then
+        ngx.log(ngx.ERR, 'can not resolve host: '..(apis.host or ''))
+    end
+
+    ngx.req.set_header('rpc_id', self:getRpcId())
+
+    return ngx.location.capture('/_internal/proxy', {
+        method = string.upper(apis.method),
+        body = cjson.encode(body),
+        vars = {
+            proxyuri = string.format('http://' .. ip .. apis.uri, ...)
+        }
+    })
 end
 
 return utils
