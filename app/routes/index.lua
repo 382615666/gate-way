@@ -31,14 +31,27 @@ function routes (app)
             res:send('设置host成功')
         end
     end):get('/api/host', function (req, res)
-        -- local config = info:get(constants.GATEWAY_CORECONFIG)
-        -- config = cjson.decode(config)
-        -- res:json(config)
+        local config = info:get(constants.GATEWAY_PROXYCONFIG)
+        config = cjson.decode(config)
+        local result = {}
+        for index, item in pairs(config) do
+            table.insert(result, item.host)
+        end
+        res:json(result)
     end)
 
     app:get('/test', function (req, res, next)
-        res:send(ngx.HTTP_GET)
+        res:pipe()
+        res:send(string.sub(req.path, -1))
     end)
+    local a = {
+        method = 'get',
+        path = '/te',
+        func = function (req, res)
+            res:send(11)
+        end
+    }
+    app[a.method](a.path, a.func)
 end
 
 

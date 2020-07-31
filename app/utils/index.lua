@@ -46,6 +46,19 @@ function utils:getRpcId ()
     return '0.' .. ngx.ctx.rpcid
 end
 
+function utils:getHttpConstants (method)
+    local methods = {
+        GET = ngx.HTTP_GET,
+        HEAD = ngx.HTTP_HEAD,
+        PUT = ngx.HTTP_PUT,
+        POST = ngx.HTTP_POST,
+        DELETE = ngx.HTTP_DELETE,
+        OPTIONS = ngx.HTTP_OPTIONS,
+        PATCH = ngx.HTTP_PATCH,
+    }
+    return methods[method]
+end
+
 function utils:invoke (apis, body, ...) 
     local config = info:get(constants.GATEWAY_CORECONFIG)
     config = cjson.decode(config)
@@ -64,12 +77,20 @@ function utils:invoke (apis, body, ...)
     ngx.req.set_header('rpc_id', self:getRpcId())
 
     return ngx.location.capture('/_internal/proxy', {
-        method = string.upper(apis.method),
+        method = self:getHttpConstants(string.upper(apis.method)),
         body = cjson.encode(body),
         vars = {
-            proxyuri = string.format('http://' .. ip .. apis.uri, ...)
+            proxyuri = string.format('http://' .. result .. apis.uri, ...)
         }
     })
+end
+
+function utils:fileExists (path)
+    local file = io.open(path, 'rb')
+    if file then
+        file:close()
+    end
+    return file ~= nil
 end
 
 return utils

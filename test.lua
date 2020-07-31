@@ -1,12 +1,9 @@
-local a = {
-    1,
-    2,
-    3
-}
+local a = {}
 
-for i, item in ipairs(a) do
-    print(item)
-    if item == 2 then
-        break
-    end
+function test ()
+    print(111)
 end
+
+a['test'] = test
+
+a:test()

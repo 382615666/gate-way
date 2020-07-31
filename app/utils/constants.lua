@@ -5,6 +5,8 @@ local constants = {
     INC = 'inc',
     GATEWAY_LOGCONFIG = 'gateway_logConfig',
     GATEWAY_APISTATISTICSCONFIG = 'gateway_apiStatisticsConfig',
+    GATEWAY_PROXYCONFIG = 'gateway_ProxyConfig',
+    GATEWAY_PROXYCONFIG = 'gateway_StaticConfig',
 }
 
 return constants
