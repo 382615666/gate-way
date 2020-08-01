@@ -1,0 +1,5 @@
+local AUTHCONFIG = {}
+
+
+
+return AUTHCONFIG

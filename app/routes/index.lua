@@ -3,6 +3,18 @@ local cjson = require('cjson')
 local ip = require('utils.ip')
 local info = ngx.shared.info
 
+
+local routers = {
+    get = {
+        '/api/version',
+        '/echo',
+        '/api/host'
+    },
+    post = {
+        '/api/host'
+    }
+}
+
 function routes (app)
     app:get('/api/version', function (req, res)
         ngx.header['content-type'] = 'application/json'
@@ -41,18 +53,12 @@ function routes (app)
     end)
 
     app:get('/test', function (req, res, next)
-        res:pipe()
         res:send(string.sub(req.path, -1))
     end)
-    local a = {
-        method = 'get',
-        path = '/te',
-        func = function (req, res)
-            res:send(11)
-        end
-    }
-    app[a.method](a.path, a.func)
 end
 
 
-return routes
+return {
+    routers = routers,
+    routes = routes
+}

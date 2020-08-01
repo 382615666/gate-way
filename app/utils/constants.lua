@@ -7,6 +7,7 @@ local constants = {
     GATEWAY_APISTATISTICSCONFIG = 'gateway_apiStatisticsConfig',
     GATEWAY_PROXYCONFIG = 'gateway_ProxyConfig',
     GATEWAY_PROXYCONFIG = 'gateway_StaticConfig',
+    GATEWAY_AUTHCONFIG = 'gateway_AuthConfig',
 }
 
 return constants

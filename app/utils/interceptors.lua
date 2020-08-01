@@ -1,35 +1,24 @@
 local utils = require('utils.index')
 local constants = require('utils.constants')
 local redis = require('utils.redis')
+local config = require('model.config')
 local info = ngx.shared.info
 local cjson = require('cjson')
 local ip = require('utils.ip')
 local interceptors = {}
 
 
-function formatSeriveName (name)
-    local result = string.gsub(name, '[-_](v%d)+', '/%1')
-    result = '/'..result..'/'
-    return result
-end
-
 interceptors.coreConfig = function (req, res, next)
-    local config = info:get(constants.GATEWAY_CORECONFIG)
-    if not config then
-        config = {
-            redis_host = os.getenv('REDIS_HOST'),
-            redis_port = os.getenv('REDIS_PORT') or 6379,
-            dev = os.getenv('NGINX_ENV') == 'development',
-            nginx_env = os.getenv('NGINX_ENV') or 'production',
-            app_name = os.getenv('APP_NAME') or 'gateway',
-            version = os.getenv('VERSION') or 'test'
-        }
 
-        info:set(constants.GATEWAY_CORECONFIG, cjson.encode(config))
-    end
+    config:coreConfig()
 
-    res['pipe'] = function (body)
-        ngx.log(ngx.ERR, 2222)
+    res['pipe'] = function (subRes)
+        for key, value in pairs(subRes.header) do
+            ngx.header[key] = value
+        end
+        ngx.status = subRes.status
+        res.isProcess = true
+        res:send(subRes.body)
     end
 
     next()
@@ -128,42 +117,12 @@ function getOpenApiList (apis, appid)
 end
 
 interceptors.openApiConfig = function (req, res, next)
-    ngx.log(ngx.ERR, 'openApiConfig')
     next()
-
-    local apiConfig = info:get(constants.GATEWAY_APISTATISTICSCONFIG)
-    if apiConfig then
-        apiConfig = cjson.decode(apiConfig)
-    else
-        local service = os.getenv('API_STATISTICS')
-        if not service then
-            return
-        end
-        service = utils:split(service, '=')
-    
-        local config = info:get(constants.GATEWAY_CORECONFIG)
-        config = cjson.decode(config)
-    
-        apiConfig =  {
-            redis_host = config.redis_host,
-            redis_port = config.redis_port,
-            urls = {
-                apis = {
-                    host = service[2] or 'saas_openapi_v1',
-                    uri = '/saas_openapi/v1/app/%s/apis?pageSize=100000',
-                    method = 'get'
-                }
-            }
-        }
-
-        info:set(constants.GATEWAY_APISTATISTICSCONFIG, cjson.encode(apiConfig))
-    end
-
     local appid = ngx.req.get_headers()['app-id']
     if not appid then
         return 
     end
-
+    local apiConfig = config:openApiConfig()
     local apis = getOpenApiList(apiConfig.urls.apis, appid)
     local path = ngx.re.gsub(req.path, '/(\\w+)/v[0-9]+/', '/$1/')
     local api = nil
@@ -193,58 +152,71 @@ interceptors.openApiConfig = function (req, res, next)
     ngx.log(ngx.ALERT,key .. "-----" .. ok)
 end
 
-function getProxyConfig ()
-    -- xx_v1,xx-xx_v1,xx_v1?location=xx&bodysize=xx
+interceptors.authConfig = function (req, res, next)
+    if res.isProcess then
+        next()
+        return
+    end
+    local authConfig = config:authConfig()
 
-    local proxy = os.getenv('PROXY')
-    local proxys = {}
-    local services = utils:split(proxy, ',')
-    
-    for index, service in ipairs(services) do
-        -- xx_v1?location=xx&bodysize=xx
-        local res = utils:split('?')
-        local name = res[1]
+    if not authConfig then
+        next()
+        return
+    end
 
-        proxys[name] = {
-            location = nil,
-            path = nil,
-            body_size = nil,
-            real = nil,
-            auth = nil
-        }
-        
-        -- location=xx&bodysize=xx
-        local configs = utils:split(res[2], '&')
-        for index, config in ipairs(configs) do
-            -- location=xx
-            local re = utils:split(config, '=')
-            proxys[name][re[1]] = re[2]
+end
+
+interceptors.staticConfig = function (req, res, next)
+    if req.method ~= 'GET' or res.isProcess then
+        next()
+        return
+    end
+
+    local staticConfig = config:staticConfig()
+    local result = nil
+    for index, item in ipairs(staticConfig) do
+        if string.find(string.lower(req.path), string.lower(item.path)) == 1 then
+            result = item
+            break
         end
-        
+    end
+    if not result then
+        next()
+        return
+    end
+    
+    result.path = result.path or '/'
+    result.dir = result.dir or '/staticfile'
+
+    local uri = string.sub(req.path, string.len(result.path), -1)
+    if string.sub(uri, -1) == '/' then
+        uri = uri .. '/index.html'
+    end
+    if utils:fileExists(result.dir .. uri) then
+        local subRes = ngx.location.capture('/_internal/static' .. uri, {
+            vars = {
+                staticfiledir = result.dir
+            }
+        })
+        if subRes.status ~= 404 then
+            res:pipe(subRes)
+        else
+            next()
+        end
+    else
+        next()
     end
 
-    -- xx-xx_v1 -> /xx-xx/v1/
-    local result = {}
-    for name, config in pairs(proxys) do
-        table.insert(result, {
-            location = config.location or formatSeriveName(name),
-            path = config.path or formatSeriveName(name),
-            host = config.real or name
-        })
-    end
-    return result
 end
 
 interceptors.proxyConfig = function (req, res, next)
-    local config = info:get(constants.GATEWAY_PROXYCONFIG)
-    if config then
-        config = cjson.decode(config)
-    else 
-        config = getProxyConfig()
-        info:set(constants.GATEWAY_PROXYCONFIG, cjson.encode(config))
+    if res.isProcess then
+        next()
+        return
     end
+    local proxyConfig = config:proxyConfig()
     local proxy = nil
-    for index, item in ipairs(config) do
+    for index, item in ipairs(proxyConfig) do
         if string.sub(req.path, 1, string.len(item.location)) == item.location then
             proxy = item
             break
@@ -272,53 +244,23 @@ interceptors.proxyConfig = function (req, res, next)
             always_forward_body = true
           }
         )
-        for key, value in pairs(subRes.header) do
-            ngx.header[key] = value
-        end
-        ngx.status = subRes.status
-        res.isProcess = true
-        res:send(subRes.body)
+        res:pipe(subRes)
     else
         next()
     end
 end
 
-interceptors.staticConfig = function (req, res, next)
-    if req.method ~= 'GET' then
+interceptors.h5Config = function (req, res, next)
+    if req.method ~= 'GET' or res.isProcess then
         next()
         return
     end
 
-    local config = info:get(constants.GATEWAY_STATICCONFIG)    
-    if config then
-        config = cjson.decode(config)
-    else
-        config = {}
-        local staticFile = os.getenv('STATIC_FILE')
-        staticFiles = utils:split(staticFile, '|')
-        for index, item in ipairs(staticFiles) do
-            local ite = utils:split(item, '&')
-            local temp = {}
-            for ind, it in ipairs(ite) do
-                local i = utils:split(it, '=')
-                if string.lower(i[1]) == 'url' then
-                    temp.path = i[2]
-                elseif string.lower(i[1] == 'path') then
-                    temp.dir = i[2]
-                elseif string.lower(i[1] == 'h5') then
-                    temp.h5 = true
-                end
-            end
-            if temp.path and temp.dir then
-                table.insert(config, temp)
-            end
-        end
-        info:set(constants.GATEWAY_STATICCONFIG, cjson.encode(config))
-    end
+    local h5Config = config:staticConfig()
 
     local result = nil
-    for index, item in ipairs(config) do
-        if string.find(string.lower(req.path), string.lower(item.path)) == 1 then
+    for index, item in ipairs(h5Config) do
+        if string.find(string.lower(req.path), string.lower(item.path)) == 1 and item.h5 then
             result = item
             break
         end
@@ -331,26 +273,13 @@ interceptors.staticConfig = function (req, res, next)
     result.path = result.path or '/'
     result.dir = result.dir or '/staticfile'
 
-    local uri = string.sub(req.path, string.len(result.path), -1)
-    if string.sub(uri, -1) == '/' then
-        uri = uri .. '/index.html'
-    end
-    if utils:fileExists(result.dir .. uri) then
-        local subRes = ngx.location.capture('/_internal/static' .. uri, {
-            vars = {
-                staticfiledir = result.dir
-            }
-        })
-        if subRes.status ~= 404 then
-            for key, value in pairs(subRes.header) do
-                ngx.header[key] = value
-            end
-            ngx.status = subRes.status
-            res.isProcess = true
-            res:send(subRes.body)
-        else
-            next()
-        end
+    local subRes = ngx.location.capture('/_internal/static/index.html', {
+        vars = {
+            staticfiledir = result.dir
+        }
+    })
+    if subRes.status ~= 404 then
+        res:pipe(subRes)
     else
         next()
     end

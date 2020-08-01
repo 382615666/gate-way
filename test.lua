@@ -1,9 +1,6 @@
-local a = {}
+local routers = {
+    get = {
+        '/api/version'
+    }
+}
 
-function test ()
-    print(111)
-end
-
-a['test'] = test
-
-a:test()
