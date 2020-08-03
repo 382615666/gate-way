@@ -1,6 +1,7 @@
 local cjson = require('cjson')
 local constants = require('utils.constants')
 local utils = require('utils.index')
+local authConfig = require('utils.authconfig')
 local info = ngx.shared.info
 
 
@@ -64,8 +65,9 @@ function CONFIG:authConfig ()
             auth = utils:split(auth, '|')
             config = {
                 type = auth[1],
-                -- options = require()
+                options = authConfig[auth[1]](auth[2])
             }
+            info:set(constants.GATEWAY_AUTHCONFIG)
         end
     end
 

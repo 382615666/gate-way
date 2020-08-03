@@ -164,6 +164,8 @@ interceptors.authConfig = function (req, res, next)
         return
     end
 
+    
+
 end
 
 interceptors.staticConfig = function (req, res, next)
