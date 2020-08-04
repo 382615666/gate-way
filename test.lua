@@ -1,13 +1,27 @@
 local a = {
-    a = 'a'
+    a = 1
 }
 
-function a:test ()
-    self:print()
-end
+local b = {}
 
-function a:print ()
-    print(self.a)
-end
+setmetatable(b, {
+    __index = a
+})
 
-a['test']()
+print(b.a)
+
+local c = {}
+
+setmetatable(c, {
+    __index = a
+})
+
+print(c.a)
+
+b.a = 2
+
+print(b.a, c.a)
+
+b.a = nil
+
+print(b.a)
