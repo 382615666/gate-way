@@ -5,6 +5,7 @@ local config = require('model.config')
 local info = ngx.shared.info
 local cjson = require('cjson')
 local ip = require('utils.ip')
+local controller = require('controller.index')
 local interceptors = {}
 
 
@@ -163,9 +164,12 @@ interceptors.authConfig = function (req, res, next)
         next()
         return
     end
-    
-    
 
+    local result = controller:init(req, res, authConfig)
+
+    if (!result)
+        next()
+    end
 end
 
 interceptors.staticConfig = function (req, res, next)

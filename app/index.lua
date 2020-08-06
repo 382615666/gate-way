@@ -12,6 +12,8 @@ app:use(interceptors.reqParams)
 app:use(interceptors.log)
 -- open api 调用统计
 app:use(interceptors.openApiConfig)
+-- 认证
+app:use(interceptors.authConfig)
 -- 静态资源
 app:use(interceptors.staticConfig)
 -- 反向代理
