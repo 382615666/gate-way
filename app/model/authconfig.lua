@@ -23,7 +23,7 @@ end
 function AUTHCONFIG:zyx (config)
     local serviceResult = formatServices(config, ',')
 
-    local include = utils:split(serviceResult['inclue'], '%&')
+    local include = utils:split(serviceResult['include'], '%&')
     local exclude = utils:split(serviceResult['exclude'], '%&')
     
     local token = utils:split(serviceResult['token'], '%&')
@@ -39,6 +39,7 @@ function AUTHCONFIG:zyx (config)
         include = include,
         exclude = exclude,
         token = token,
+        key = 'api-gateway',
         urls = {
           -- 权限api接口
           apis = {
@@ -95,7 +96,7 @@ end
 function AUTHCONFIG:openapi (config)
     local serviceResult = formatServices(config, ',')
     
-    local include = utils:split(serviceResult['inclue'], '&')
+    local include = utils:split(serviceResult['include'], '&')
     
     local saas_openapi_v1 = serviceResult['saas_openapi_v1'] or 'saas_openapi_v1'
 
@@ -124,7 +125,7 @@ end
 function AUTHCONFIG:ad (config)
     local serviceResult = formatServices(config, ',')
 
-    local include = utils:split(serviceResult['inclue'], '&')
+    local include = utils:split(serviceResult['include'], '&')
     local exclude = utils:split(serviceResult['exclude'], '&')
         
     local paas_ability_us_v1 = serviceResult['paas_ability_us_v1'] or 'paas_ability_us_v1'
@@ -133,6 +134,7 @@ function AUTHCONFIG:ad (config)
     return {
         include = include,
         exclude = exclude,
+        key = 'ability-gateway',
         urls = {
           -- 权限api接口
           apis = {
@@ -188,10 +190,11 @@ end
 
 function AUTHCONFIG:emp (config)
     local serviceResult = formatServices(config, ',')
-    local include = utils:split(serviceResult['inclue'], '&')
+    local include = utils:split(serviceResult['include'], '&')
     local emp_os_v1 = serviceResult['emp_os_v1'] or 'emp_os_v1'
     return {
         include = include,
+        key = 'api-gateway',
         urls = {
           current_user = {
             host = 'www.ejw.cn',
@@ -219,11 +222,12 @@ end
 
 function AUTHCONFIG:information (config)
     local serviceResult = formatServices(config, ',')
-    local include = utils:split(serviceResult['inclue'], '&')
+    local include = utils:split(serviceResult['include'], '&')
     local info_saas_us_v1 = serviceResult['info_saas_us_v1'] or 'info_saas_us_v1'
 
     return {
         include = include,
+        key = 'information-gateway',
         urls = {
           -- 权限api接口
           apis = {
@@ -268,7 +272,7 @@ end
 function AUTHCONFIG:std (config)
     local serviceResult = formatServices(config, ',')
     local key = serviceResult['key'] or 'std'
-    local include = utils:split(serviceResult['inclue'], '&')
+    local include = utils:split(serviceResult['include'], '&')
 
     local login_url = utils:split(serviceResult['login_url'], '@')
     local login_host = login_url[1] or 'us_v1'

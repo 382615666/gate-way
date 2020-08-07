@@ -102,7 +102,7 @@ function getOpenApiList (apis, appid)
         return cjson.decode(config)
     else
         local res = utils:invoke(apis, nil, appid)
-        if res.status == 200 then
+        if res.status == ngx.HTTP_OK then
             local result = cjson.decode(res.body)
             for index, item in ipairs(result.data) do
                 local path = ngx.re.gsub(item.apiPath, '/', '\\/+', "i")
@@ -154,10 +154,6 @@ interceptors.openApiConfig = function (req, res, next)
 end
 
 interceptors.authConfig = function (req, res, next)
-    if res.isProcess then
-        next()
-        return
-    end
     local authConfig = config:authConfig()
 
     if not authConfig then
@@ -165,15 +161,18 @@ interceptors.authConfig = function (req, res, next)
         return
     end
 
-    local result = controller:init(req, res, authConfig)
+    controller:init(req, res, authConfig)
 
-    if (!result)
+    if (!res.isProcess)
         next()
     end
 end
 
 interceptors.staticConfig = function (req, res, next)
-    if req.method ~= 'GET' or res.isProcess then
+    if res.isProcess then
+        return
+    end
+    if req.method ~= 'GET' then
         next()
         return
     end
@@ -217,7 +216,6 @@ end
 
 interceptors.proxyConfig = function (req, res, next)
     if res.isProcess then
-        next()
         return
     end
     local proxyConfig = config:proxyConfig()
@@ -257,7 +255,10 @@ interceptors.proxyConfig = function (req, res, next)
 end
 
 interceptors.h5Config = function (req, res, next)
-    if req.method ~= 'GET' or res.isProcess then
+    if res.isProcess then
+        return
+    end
+    if req.method ~= 'GET' then
         next()
         return
     end
