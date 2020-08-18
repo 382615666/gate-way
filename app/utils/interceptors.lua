@@ -22,6 +22,14 @@ interceptors.coreConfig = function (req, res, next)
         res:send(subRes.body)
     end
 
+    res['err'] = function (status)
+        local error = {
+            
+        }
+        res.isProcess = true
+        res:status(status):json(info)
+    end
+
     next()
 end
 

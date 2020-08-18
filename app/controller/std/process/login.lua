@@ -1,4 +1,5 @@
 local parent = require('controller.parent.login')
+local user = rqeuire('controller.std.process.user')
 local login = {
     name = 'login'
 }
@@ -11,7 +12,7 @@ function login:handler (gateway)
     if self:isProcess(gateway.state, gateway.req, gateway.res, gateway.option) then
         self:work(req, res, options)
     else
-        gateway:setState()
+        gateway:setState(user)
         gateway:work()
     end
 end
