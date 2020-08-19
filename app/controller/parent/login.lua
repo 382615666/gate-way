@@ -1,14 +1,14 @@
 local utils = require('utils.index')
 local userSign = require('utils.sign')
-local token = require('utils.token')
+local TOKEN = require('utils.token')
 local permission = require('utils.permission')
 local login = {}
 
-function login:isProcess (state, req, res, options)
+function login:isProcess (state, req)
     return state.name == self.name and string.lower(req.path) == '/api/login' and req.method == 'POST' 
 end
 
-function login:work(req, res, options)
+function login:work(req, res, option)
     res.isProcess = true
     local subRes = self:getLoginInfo(option.urls.login, req.body)
     ngx.header['content-type'] = 'application/json'
@@ -23,7 +23,7 @@ function login:work(req, res, options)
           sign = sign,
           remember = req.body.remember
         }
-        local access_token = token:build(payload, option.key)
+        local access_token = TOKEN:build(payload, option.key)
         ngx.update_time()
         local result = {
           userId = userInfo.userId,
@@ -32,9 +32,9 @@ function login:work(req, res, options)
         }
         permission:updateUserPermission(option.urls.permission, userInfo.userId, option.app, option.key)
         res:json(result)
-      else
-        res:pipe(sub_res)
-      end
+    else
+      res:pipe(sub_res)
+    end
 end
 
 function login:getLoginInfo (address, data)

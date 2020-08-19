@@ -22,12 +22,10 @@ interceptors.coreConfig = function (req, res, next)
         res:send(subRes.body)
     end
 
-    res['err'] = function (status)
-        local error = {
-            
-        }
+    res['err'] = function (error)
+        ngx.header['x-response-by'] = 'gateway'
         res.isProcess = true
-        res:status(status):json(info)
+        res:status(error.status):json(error.info)
     end
 
     next()

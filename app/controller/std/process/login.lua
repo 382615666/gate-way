@@ -9,8 +9,8 @@ setmetatable(login, {
 })
 
 function login:handler (gateway)
-    if self:isProcess(gateway.state, gateway.req, gateway.res, gateway.option) then
-        self:work(req, res, options)
+    if self:isProcess(gateway.state, gateway.req) then
+        self:work(gateway.req, gateway.res, gateway.option)
     else
         gateway:setState(user)
         gateway:work()

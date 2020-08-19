@@ -25,7 +25,7 @@ end
 function TOKEN:syncGenKey (key)
     ngx.update_time()
     local date = os.date('%Y%m%d', ngx.time() - KEY_EXPIRE)
-    local key = key .. ':jwt-key:' .. date
+    local key = key .. '-gateway:jwt-key:' .. date
     uuid.seed()
     local client = redis:getClient()
     local lock = client:setnx(key, uuid())

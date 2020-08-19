@@ -1,4 +1,5 @@
 local parent = require('controller.parent.user')
+local logout = require('controller.std.process.logout')
 local user = {
     name = 'user'
 }
@@ -8,10 +9,10 @@ setmetatable(user, {
 })
 
 function user:handler (gateway)
-    if self:isProcess(gateway.state, gateway.req, gateway.res, gateway.option) then
-        self:work(req, res, options)
+    if self:isProcess(gateway.state, gateway.req) then
+        self:work(gateway.req, gateway.res, gateway.option)
     else
-        gateway:setState()
+        gateway:setState(logout)
         gateway:work()
     end
 end

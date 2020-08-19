@@ -39,7 +39,7 @@ function AUTHCONFIG:zyx (config)
         include = include,
         exclude = exclude,
         token = token,
-        key = 'api-gateway',
+        key = 'zyx',
         urls = {
           -- 权限api接口
           apis = {
@@ -134,7 +134,7 @@ function AUTHCONFIG:ad (config)
     return {
         include = include,
         exclude = exclude,
-        key = 'ability-gateway',
+        key = 'ability',
         urls = {
           -- 权限api接口
           apis = {
@@ -194,7 +194,7 @@ function AUTHCONFIG:emp (config)
     local emp_os_v1 = serviceResult['emp_os_v1'] or 'emp_os_v1'
     return {
         include = include,
-        key = 'api-gateway',
+        key = 'emp',
         urls = {
           current_user = {
             host = 'www.ejw.cn',
@@ -227,7 +227,7 @@ function AUTHCONFIG:information (config)
 
     return {
         include = include,
-        key = 'information-gateway',
+        key = 'information',
         urls = {
           -- 权限api接口
           apis = {
