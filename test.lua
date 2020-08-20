@@ -1,7 +1,13 @@
-local a = {}
-function a:test (a)
+local a = {
+    1,
+    2,
+    3,
+    4
+}
 
-print(a)
+for index in ipairs(a) do
+    print(index)
+    if index == 2 then
+        break
+    end
 end
-
-a:test(11)

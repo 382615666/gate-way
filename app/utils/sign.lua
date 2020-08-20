@@ -11,7 +11,7 @@ function sign:createUserSign (userId, device, k)
     uuid.seed()
     local result = uuid()
     client:set(key, result)
-    client:closeClient(client)
+    redis:closeClient(client)
     return result
 
 end

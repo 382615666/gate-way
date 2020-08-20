@@ -56,7 +56,7 @@ end
 function IP:getDevIp (hostname)
     local client = redis:getClient()
     local result, err = client:hget(constants.HOST_DEVELOPMENT, hostname)
-    client:closeClient(client)
+    redis:closeClient(client)
     if not err then
         return result
     else 

@@ -152,7 +152,7 @@ interceptors.openApiConfig = function (req, res, next)
     
     local client = redis:getClient()
     local result = client:incr(key)
-    client:closeClient(client)
+    redis:closeClient(client)
     if result == 1 then
         client:expire(key, 86400)
     end

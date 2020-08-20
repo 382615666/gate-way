@@ -36,6 +36,20 @@ local constants = {
                 code = 401004,
                 message = '当前用户密码或权限已被修改，请重新登录'
             }
+        },
+        e403001 = {
+            status = 403,
+            info = {
+                code = 403001,
+                message = '没有权限访问此接口'
+            }
+        },
+        e404001 = {
+            status = 404,
+            info = {
+                code = 404001,
+                message = '无法访问的此资源'
+            }
         }
     }
 }
